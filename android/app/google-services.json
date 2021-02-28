@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "628669334504",
+    "project_id": "aplikasi-absensi-jc",
+    "storage_bucket": "aplikasi-absensi-jc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:628669334504:android:57b19c8f63c27557d85a5d",
+        "android_client_info": {
+          "package_name": "com.aplikasiabsensi"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "628669334504-e9rf549c70t2078290dfc73kr8nrudkn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQACSGTRV-0ATO3cWDgHRdVcOpW4G0GlU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "628669334504-e9rf549c70t2078290dfc73kr8nrudkn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

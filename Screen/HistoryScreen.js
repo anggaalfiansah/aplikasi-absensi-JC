@@ -3,7 +3,7 @@
 /* eslint-disable no-alert */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useEffect, useState} from 'react';
-import {View, Text} from 'react-native';
+import {View, Text, ScrollView} from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import {Container, Icon, Item, Picker} from 'native-base';
 
@@ -32,7 +32,7 @@ const HistoryScreen = ({route}) => {
 
   useEffect(() => {
     hariSekarang();
-  },[Bulan]);
+  }, [Bulan]);
 
   // Fungsi untuk Mengambil data berdasarkan filter
   const hariSekarang = () => {
@@ -63,122 +63,124 @@ const HistoryScreen = ({route}) => {
         flexDirection: 'column',
         justifyContent: 'flex-start',
       }}>
-      <Item>
-        <Picker
-          mode="dropdown"
-          iosIcon={<Icon name="arrow-down" />}
-          style={{width: undefined}}
-          placeholderIconColor="#007aff"
-          selectedValue={Bulan}
-          onValueChange={(value) => setBulan(value)}>
-          <Picker.Item label="Januari 2021" value="Januari" />
-          <Picker.Item label="Februari 2021" value="Februari" />
-          <Picker.Item label="Maret 2021" value="Maret" />
-          <Picker.Item label="April 2021" value="April" />
-          <Picker.Item label="Mei 2021" value="Mei" />
-          <Picker.Item label="Juni 2021" value="Juni" />
-          <Picker.Item label="Juli 2021" value="Juli" />
-          <Picker.Item label="Agustus 2021" value="Agustus" />
-          <Picker.Item label="September 2021" value="Sebtember" />
-          <Picker.Item label="Oktober 2021" value="Oktober" />
-          <Picker.Item label="November 2021" value="November" />
-          <Picker.Item label="Desember 2021" value="Desember" />
-        </Picker>
-      </Item>
-      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-        <Item
-          style={{
-            width: '10%',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-          <Text>Tgl</Text>
+      <ScrollView>
+        <Item>
+          <Picker
+            mode="dropdown"
+            iosIcon={<Icon name="arrow-down" />}
+            style={{width: undefined}}
+            placeholderIconColor="#007aff"
+            selectedValue={Bulan}
+            onValueChange={(value) => setBulan(value)}>
+            <Picker.Item label="Januari 2021" value="Januari" />
+            <Picker.Item label="Februari 2021" value="Februari" />
+            <Picker.Item label="Maret 2021" value="Maret" />
+            <Picker.Item label="April 2021" value="April" />
+            <Picker.Item label="Mei 2021" value="Mei" />
+            <Picker.Item label="Juni 2021" value="Juni" />
+            <Picker.Item label="Juli 2021" value="Juli" />
+            <Picker.Item label="Agustus 2021" value="Agustus" />
+            <Picker.Item label="September 2021" value="Sebtember" />
+            <Picker.Item label="Oktober 2021" value="Oktober" />
+            <Picker.Item label="November 2021" value="November" />
+            <Picker.Item label="Desember 2021" value="Desember" />
+          </Picker>
         </Item>
-        <Item
-          style={{
-            width: '15%',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-          <Text>Masuk</Text>
-        </Item>
-        <Item
-          style={{
-            width: '15%',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-          <Text>Pulang</Text>
-        </Item>
-        <Item
-          style={{
-            width: '15%',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-          <Text>Lembur</Text>
-        </Item>
-        <Item
-          style={{
-            width: '45%',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-          <Text>Keterangan</Text>
-        </Item>
-      </View>
-      {History.map((datas, key) => {
-        return (
-          <View
-            key={key}
-            style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-            <Item
-              style={{
-                width: '10%',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-              <Text>{datas.Tanggal}</Text>
-            </Item>
-            <Item
-              style={{
-                width: '15%',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-              <Text>{datas.CheckIn}</Text>
-            </Item>
-            <Item
-              style={{
-                width: '15%',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-              <Text style={{padding: 2, textAlign: 'center'}}>
-                {datas.CheckOut}
-              </Text>
-            </Item>
-            <Item
-              style={{
-                width: '15%',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-              <Text>{datas.Lembur}</Text>
-            </Item>
-            <Item
-              style={{
-                width: '40%',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-              <Text style={{textAlign: 'center', padding: 2}}>
-                {datas.Keterangan}
-              </Text>
-            </Item>
-          </View>
-        );
-      })}
+        <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+          <Item
+            style={{
+              width: '10%',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+            <Text>Tgl</Text>
+          </Item>
+          <Item
+            style={{
+              width: '15%',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+            <Text>Masuk</Text>
+          </Item>
+          <Item
+            style={{
+              width: '15%',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+            <Text>Pulang</Text>
+          </Item>
+          <Item
+            style={{
+              width: '15%',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+            <Text>Lembur</Text>
+          </Item>
+          <Item
+            style={{
+              width: '45%',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}>
+            <Text>Keterangan</Text>
+          </Item>
+        </View>
+        {History.map((datas, key) => {
+          return (
+            <View
+              key={key}
+              style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+              <Item
+                style={{
+                  width: '10%',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
+                <Text>{datas.Tanggal}</Text>
+              </Item>
+              <Item
+                style={{
+                  width: '15%',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
+                <Text>{datas.CheckIn}</Text>
+              </Item>
+              <Item
+                style={{
+                  width: '15%',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
+                <Text style={{padding: 2, textAlign: 'center'}}>
+                  {datas.CheckOut}
+                </Text>
+              </Item>
+              <Item
+                style={{
+                  width: '15%',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
+                <Text>{datas.Lembur}</Text>
+              </Item>
+              <Item
+                style={{
+                  width: '40%',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
+                <Text style={{textAlign: 'center', padding: 2}}>
+                  {datas.Keterangan}
+                </Text>
+              </Item>
+            </View>
+          );
+        })}
+      </ScrollView>
     </Container>
   );
 };

@@ -21,6 +21,7 @@ import {Image, TouchableOpacity} from 'react-native';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
+import Spinner from 'react-native-loading-spinner-overlay';
 
 const IzinScreen = ({route, navigation}) => {
   // Data dari lemparan dari HomeScreen untuk validasi upload data
@@ -52,7 +53,6 @@ const IzinScreen = ({route, navigation}) => {
   );
   const [lampiranPath3, setlampiranPath3] = useState();
 
-  const [Progress, setProgress] = useState('Mengupload gambar');
   const [modalProgres, setModalProgres] = useState(false);
 
   // Fungsi untuk menjalankan ImagePicker Untuk mengambil gambar melalui Kamera
@@ -121,8 +121,8 @@ const IzinScreen = ({route, navigation}) => {
     setModalProgres(true);
 
     // Menentukan tanggal, bulan, tahun untuk validasi upload ke firestorage
-    const tanggalAwal = Tanggal.startDate.getDate();
-    const tanggalAkhir = Tanggal.endDate.getDate();
+    const tanggalAwal = ('0' + Tanggal.startDate.getDate()).slice(-2);
+    const tanggalAkhir = ('0' + Tanggal.endDate.getDate()).slice(-2);
     const bulan = [
       'Januari',
       'Februari',
@@ -182,7 +182,6 @@ const IzinScreen = ({route, navigation}) => {
   // Fungsi untuk mengirim data ke firestore
   const submit = () => {
     setModalProgres(true);
-    setProgress('Mengupload data');
     // Untuk mengambil list data dari jangka waktu izin dan memasukkannya ke array
     for (
       var arr = [], dt = new Date(Tanggal.startDate);
@@ -222,11 +221,6 @@ const IzinScreen = ({route, navigation}) => {
     console.log(file);
     console.log(filePath);
 
-    // Membuat batch dengan isi berdasarkan jangka waktu izin untuk di upload sekaligus
-    const db = firestore();
-    const batch = db.batch();
-    console.log('set batch');
-
     // membongkar array jangka waktu untuk dimasukkan kedalam batch supaya bisa di upload sekaligus
     listTanggal.forEach((tanggal) => {
       console.log('set batch item');
@@ -245,17 +239,18 @@ const IzinScreen = ({route, navigation}) => {
         'November',
         'Desember',
       ];
-      const tanggalLengkap = `${tanggal.getDate()} ${
+      let date = ('0' + tanggal.getDate()).slice(-2);
+      const tanggalLengkap = `${date} ${
         bulan[tanggal.getMonth()]
       } ${tanggal.getFullYear()}`;
 
       // Untuk menentukan nama document di firestore
       const doc = `${tanggalLengkap} - ${Data.nama} - ${Data.id}`;
 
-      // Untuk menentukan data yang akan di Upload
+      // Untuk mengupload
       const data = {
         Periode: `${bulan[tanggal.getMonth()]} ${tanggal.getFullYear()}`,
-        Tanggal: `${tanggal.getDate()} `,
+        Tanggal: `${date} `,
         CheckIn: 'Izin',
         CheckOut: 'Izin',
         Lembur: '-',
@@ -268,19 +263,13 @@ const IzinScreen = ({route, navigation}) => {
       };
 
       // Memasukan data dan nama document ke dalam batch
-      batch.set(db.collection('Absensi').doc(doc), data);
+      firestore()
+        .collection('Absensi')
+        .doc(doc)
+        .set(data)
+        .then(() => console.log('upload berhasil'));
     });
-
-    console.log('commit');
-    // Untuk mengupload batch ke firestore
-    batch
-      .commit()
-      .then(() => {
-        console.log('Upload Data Berhasil');
-      })
-      .catch((err) => console.log(`There was an error: ${err}`));
-
-    setProgress('Upload Data Berhasil');
+    console.log('Upload Data Berhasil');
 
     // Mengarahkan ke halaman utama
     navigation.goBack();
@@ -508,14 +497,11 @@ const IzinScreen = ({route, navigation}) => {
       </Content>
 
       {/* Modal Proses */}
-      <Modal
-        style={{width: 300, height: 100}}
+      <Spinner
         visible={modalProgres}
-        backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
-        <Card disabled={true}>
-          <Text>{Progress}</Text>
-        </Card>
-      </Modal>
+        textContent={'Memproses...'}
+        textStyle={{color: '#FFF'}}
+      />
     </Container>
   );
 };

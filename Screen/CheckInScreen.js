@@ -6,8 +6,8 @@ import {RNCamera} from 'react-native-camera';
 import Geolocation from 'react-native-geolocation-service';
 import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
-import {Card, Modal} from '@ui-kitten/components';
 import {View} from 'react-native';
+import Spinner from 'react-native-loading-spinner-overlay';
 
 const CheckInScreen = ({route, navigation}) => {
   // Data dari lemparan dari HomeScreen untuk validasi upload data
@@ -15,9 +15,6 @@ const CheckInScreen = ({route, navigation}) => {
 
   const [Koordinat, setKoordinat] = useState('');
   const [camera, setcamera] = useState();
-  const [Progress, setProgress] = useState(
-    'Proses Check In berjalan...',
-  );
   const [modal, setModal] = useState(false);
 
   useEffect(() => {
@@ -63,7 +60,7 @@ const CheckInScreen = ({route, navigation}) => {
     console.log(capture.uri);
     // Untuk mengambil Jam, tanggal, bulan, tahun untuk digunakan saat upload dan validasi
     const hariIni = new Date();
-    const tanggalSekarang = hariIni.getDate();
+    const tanggalSekarang = ('0' + hariIni.getDate()).slice(-2);
     const bulan = [
       'Januari',
       'Februari',
@@ -143,13 +140,11 @@ const CheckInScreen = ({route, navigation}) => {
 
   // Fungsi untuk upload ke firestore dengan data yang berasal dari submit
   const uploadData = (doc, data) => {
-    setProgress('Mengupload Data CheckIn...');
     const ref = firestore().collection('Absensi');
     ref
       .doc(doc)
       .set(data)
       .then(() => {
-        setProgress('Mengarahkan ke halaman hasil');
         navigation.navigate('Check In Result', {DataCheckIn: data});
         setModal(false);
       })
@@ -180,14 +175,11 @@ const CheckInScreen = ({route, navigation}) => {
       </Button>
 
       {/* Modal Proses */}
-      <Modal
-        style={{width: 300, height: 100}}
+      <Spinner
         visible={modal}
-        backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
-        <Card disabled={true}>
-          <Text>{Progress}</Text>
-        </Card>
-      </Modal>
+        textContent={'Memproses...'}
+        textStyle={{color: '#FFF'}}
+      />
     </View>
   );
 };

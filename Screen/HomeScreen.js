@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import {Card, Modal} from '@ui-kitten/components';
+import Spinner from 'react-native-loading-spinner-overlay';
 
 const HomeScreen = ({extraData, navigation}) => {
   const [Data, setData] = useState();
@@ -22,9 +22,6 @@ const HomeScreen = ({extraData, navigation}) => {
   const [controllerCheckIn, setcontrollerCheckIn] = useState(true);
   const [controllerCheckOut, setcontrollerCheckOut] = useState(true);
   const [modal, setModal] = useState(false);
-  const [Progress, setProgress] = useState(
-    'Proses Check In Akan Segera berjalan',
-  );
 
   // ID  untuk mengambil data user di firestore
   const uid = extraData.uid;
@@ -33,7 +30,8 @@ const HomeScreen = ({extraData, navigation}) => {
   const hariIni = new Date();
   let hariKemarin = new Date();
   hariKemarin.setDate(hariKemarin.getDate() - 1);
-  const tanggalSekarang = hariIni.getDate();
+  const tanggalSekarang = ('0' + hariIni.getDate()).slice(-2);
+  const tanggalKemarin = ('0' + hariKemarin.getDate()).slice(-2);
   const bulan = [
     'Januari',
     'Februari',
@@ -51,13 +49,21 @@ const HomeScreen = ({extraData, navigation}) => {
   const bulanSekarang = bulan[hariIni.getMonth()];
   const tahunSekarang = hariIni.getFullYear();
   const tanggalHariIni = `${tanggalSekarang} ${bulanSekarang} ${tahunSekarang}`;
-  const tanggalKemarin = `${hariKemarin.getDate()} ${
+  const tanggalHariKemarin = `${tanggalKemarin} ${
     bulan[hariKemarin.getMonth()]
   } ${hariKemarin.getFullYear()}`;
 
+  //
+  const updateTime = 5000;
+
   useEffect(() => {
-    home();
-  });
+    const interval = setInterval(() => {
+      home();
+      console.log('Logs every minute');
+    }, updateTime);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Menambil data profil dari firestore untuk digunakan oleh fungsi lain sebagai validasi saat mengambil data absensi
   const home = () => {
@@ -110,7 +116,7 @@ const HomeScreen = ({extraData, navigation}) => {
   const hariSebelumnya = (user) => {
     const ref = firestore().collection('Absensi');
     ref
-      .doc(`${tanggalKemarin} - ${user.nama} - ${user.id}`)
+      .doc(`${tanggalHariKemarin} - ${user.nama} - ${user.id}`)
       .get()
       .then((firestoreDocuments) => {
         const dataKemarin = firestoreDocuments.data();
@@ -119,7 +125,7 @@ const HomeScreen = ({extraData, navigation}) => {
             Periode: `${
               bulan[hariKemarin.getMonth()]
             } ${hariKemarin.getFullYear()}`,
-            Tanggal: `${hariKemarin.getDate()} `,
+            Tanggal: `${tanggalKemarin} `,
             CheckIn: '-',
             CheckOut: '-',
             Lembur: '-',
@@ -138,7 +144,9 @@ const HomeScreen = ({extraData, navigation}) => {
             Lembur: '-',
           };
           console.log('Upload Data...');
-          ref.doc(`${tanggalKemarin} - ${user.nama} - ${user.id}`).update(data);
+          ref
+            .doc(`${tanggalHariKemarin} - ${user.nama} - ${user.id}`)
+            .update(data);
         }
       })
       .catch((error) => {
@@ -149,7 +157,8 @@ const HomeScreen = ({extraData, navigation}) => {
   // Fungsi CheckOut
   const checkOut = () => {
     setModal(true);
-    setProgress('memulai Check Out...');
+
+    // Untuk menghitung Check Out, keterangan, Lembur
     const HariIni = new Date();
     const jamPulang = HariIni.toString().substr(16, 5);
     const hadir = DataHariIni.CheckIn.split(':');
@@ -159,11 +168,11 @@ const HomeScreen = ({extraData, navigation}) => {
       new Date(0, 0, 0, hadir[0], hadir[1], 0).getTime();
     const jamLembur = Math.floor(diff / 1000 / 60 / 60);
     const menitLembur = Math.floor(diff / 1000 / 60);
-    setProgress('Set Waktu...');
     if (jamLembur < 0) {
       jamLembur + 24;
     }
 
+    // Untuk menentukan nilai Lembur dan Keterangan
     let lembur = '';
     let keterangan = '';
     if (HariIni.getHours() < 19) {
@@ -183,19 +192,19 @@ const HomeScreen = ({extraData, navigation}) => {
       keterangan = `${DataHariIni.Keterangan}, Lembur`;
     }
 
-    setProgress('Set Data CheckOut...');
+    // Untuk Mengeset data CheckOut
     const data = {
       Keterangan: keterangan,
       CheckOut: jamPulang,
       Lembur: lembur,
     };
-    setProgress('Upload Data CheckOut...');
+
+    // Untuk Update data hari ini
     const ref = firestore().collection('Absensi');
     ref
       .doc(`${tanggalHariIni} - ${Data.nama} - ${Data.id}`)
       .update(data)
       .then(() => {
-        setProgress('Proses Check Out ');
         setcontrollerCheckIn(true);
         setcontrollerCheckOut(true);
         setModal(false);
@@ -304,14 +313,11 @@ const HomeScreen = ({extraData, navigation}) => {
       </View>
 
       {/* Modal Progress CheckOut */}
-      <Modal
-        style={{width: 300, height: 100}}
+      <Spinner
         visible={modal}
-        backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
-        <Card disabled={true}>
-          <Text>{Progress}</Text>
-        </Card>
-      </Modal>
+        textContent={'Memproses...'}
+        textStyle={{color: '#FFF'}}
+      />
     </SafeAreaView>
   );
 };

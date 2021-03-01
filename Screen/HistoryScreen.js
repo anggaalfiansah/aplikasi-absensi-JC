@@ -1,12 +1,17 @@
 /* eslint-disable prettier/prettier */
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-alert */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useEffect, useState} from 'react';
 import {View, Text} from 'react-native';
 import firestore from '@react-native-firebase/firestore';
-import {Container, Content, Icon, Item, List, ListItem, Picker} from 'native-base';
+import {Container, Icon, Item, Picker} from 'native-base';
 
 const HistoryScreen = ({route}) => {
+  // Data dari lemparan dari HomeScreen untuk validasi pengambilan data
   const data = route.params.Data;
+
+  // Untuk Filter pengambilan data
   const bulan = [
     'Januari',
     'Februari',
@@ -27,10 +32,11 @@ const HistoryScreen = ({route}) => {
 
   useEffect(() => {
     hariSekarang();
-  });
+  },[Bulan]);
 
+  // Fungsi untuk Mengambil data berdasarkan filter
   const hariSekarang = () => {
-    const ref = firestore().collection(`Absensi`);
+    const ref = firestore().collection('Absensi');
     ref
       .where('Periode', '==', `${Bulan} 2021`)
       .where('Nama', '==', data.nama)
@@ -50,6 +56,7 @@ const HistoryScreen = ({route}) => {
         alert(error);
       });
   };
+
   return (
     <Container
       style={{
@@ -120,7 +127,7 @@ const HistoryScreen = ({route}) => {
           <Text>Keterangan</Text>
         </Item>
       </View>
-      {History.map((data, key) => {
+      {History.map((datas, key) => {
         return (
           <View
             key={key}
@@ -131,7 +138,7 @@ const HistoryScreen = ({route}) => {
                 justifyContent: 'center',
                 alignItems: 'center',
               }}>
-              <Text>{data.Tanggal}</Text>
+              <Text>{datas.Tanggal}</Text>
             </Item>
             <Item
               style={{
@@ -139,7 +146,7 @@ const HistoryScreen = ({route}) => {
                 justifyContent: 'center',
                 alignItems: 'center',
               }}>
-              <Text>{data.CheckIn}</Text>
+              <Text>{datas.CheckIn}</Text>
             </Item>
             <Item
               style={{
@@ -148,7 +155,7 @@ const HistoryScreen = ({route}) => {
                 alignItems: 'center',
               }}>
               <Text style={{padding: 2, textAlign: 'center'}}>
-                {data.CheckOut}
+                {datas.CheckOut}
               </Text>
             </Item>
             <Item
@@ -157,15 +164,17 @@ const HistoryScreen = ({route}) => {
                 justifyContent: 'center',
                 alignItems: 'center',
               }}>
-              <Text>{data.Lembur}</Text>
+              <Text>{datas.Lembur}</Text>
             </Item>
             <Item
               style={{
-                width: '45%',
+                width: '40%',
                 justifyContent: 'center',
                 alignItems: 'center',
               }}>
-              <Text>{data.Keterangan}</Text>
+              <Text style={{textAlign: 'center', padding: 2}}>
+                {datas.Keterangan}
+              </Text>
             </Item>
           </View>
         );

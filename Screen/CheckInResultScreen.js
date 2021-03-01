@@ -1,10 +1,13 @@
+/* eslint-disable prettier/prettier */
+/* eslint-disable react-native/no-inline-styles */
 import {Button, H3} from 'native-base';
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {View, Text, Image} from 'react-native';
 
 const CheckInResultScreen = ({route, navigation}) => {
+  // Data dari lemparan dari CheckInScreen untuk ditampilkan
   const data = route.params.DataCheckIn;
-  console.log(data)
+
   return (
     <View
       style={{
@@ -28,7 +31,7 @@ const CheckInResultScreen = ({route, navigation}) => {
         block
         success
         style={{marginHorizontal: 20, marginVertical: 15}}
-        onPress={()=>navigation.navigate('Home')}>
+        onPress={() => navigation.navigate('Home')}>
         <Text style={{fontSize: 20}}>Done</Text>
       </Button>
     </View>

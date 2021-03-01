@@ -1,4 +1,5 @@
 /* eslint-disable prettier/prettier */
+/* eslint-disable no-alert */
 /* eslint-disable react-native/no-inline-styles */
 import {
   Button,
@@ -21,6 +22,7 @@ const LoginScreen = (props) => {
 
   const Navigation = props.navigation;
 
+  // Fungsi Untuk Login
   const onLoginPress = () => {
     if (email === '' && password === '') {
       alert('Silahkan Isi Email Dan Password');

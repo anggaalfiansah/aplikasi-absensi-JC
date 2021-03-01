@@ -1,19 +1,22 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable react-native/no-inline-styles */
-import {Button, Container, Content, Text} from 'native-base';
+import {Button, Text} from 'native-base';
 import React, {useEffect, useState} from 'react';
 import {RNCamera} from 'react-native-camera';
 import Geolocation from 'react-native-geolocation-service';
 import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
 import {Card, Modal} from '@ui-kitten/components';
+import {View} from 'react-native';
 
 const CheckInScreen = ({route, navigation}) => {
+  // Data dari lemparan dari HomeScreen untuk validasi upload data
   const Data = route.params.Data;
+
   const [Koordinat, setKoordinat] = useState('');
   const [camera, setcamera] = useState();
   const [Progress, setProgress] = useState(
-    'Proses Check In Akan Segera berjalan',
+    'Proses Check In berjalan...',
   );
   const [modal, setModal] = useState(false);
 
@@ -21,6 +24,7 @@ const CheckInScreen = ({route, navigation}) => {
     getLocation();
   }, []);
 
+  // Fungsi untuk mengambil data koordinat perangkat
   const getLocation = () => {
     Geolocation.getCurrentPosition(
       (position) => {
@@ -42,12 +46,22 @@ const CheckInScreen = ({route, navigation}) => {
     );
   };
 
+  // fFungsi untuk memproses data CheckIn yang akan dikirim ke firebase
   const submit = async () => {
+    // Untuk menampilkan modal proses
     setModal(true);
-    const options = {quality: 1, base64: true};
+
+    // Option untuk mengeset pengaturan gambar yang akan dicapture
+    const options = {
+      quality: 0.65,
+      fixOrientation: true,
+      forceUpOrientation: true,
+    };
+
+    // variabel untuk mengcapture gambar
     const capture = await camera.takePictureAsync(options);
     console.log(capture.uri);
-
+    // Untuk mengambil Jam, tanggal, bulan, tahun untuk digunakan saat upload dan validasi
     const hariIni = new Date();
     const tanggalSekarang = hariIni.getDate();
     const bulan = [
@@ -69,9 +83,10 @@ const CheckInScreen = ({route, navigation}) => {
     const tanggalHadir = `${tanggalSekarang} ${bulanSekarang} ${tahunSekarang}`;
     const jamHadir = hariIni.toString().substr(16, 5);
 
-    setProgress('Mengupload File')
+    // Untuk Mengupload file hasil capture ke firebase
     const storageRef = storage().ref(`Absensi/${tanggalHadir}-${Data.nama}`);
     storageRef.putFile(`${capture.uri}`).on(
+      // Untuk menampilkan progress Upload
       storage.TaskEvent.STATE_CHANGED,
       (snapshot) => {
         console.log('snapshot: ' + snapshot.state);
@@ -81,24 +96,31 @@ const CheckInScreen = ({route, navigation}) => {
         );
 
         if (snapshot.state === storage.TaskState.SUCCESS) {
-          setProgress('Upload Success');
+          console.log('Upload Success');
         }
       },
       (error) => {
         console.log('image upload error: ' + error.toString());
       },
+
+      // Untuk mendapatkan url dari file yang kita upload & memproses data yang akan di upload
       () => {
         // Untuk mendapatkan url dari file yang kita upload
         storageRef.getDownloadURL().then((downloadUrl) => {
+          // Untuk Mendapatkan data pathGambar
           const pathGambar = `Absensi/${tanggalHadir} - ${Data.nama}`;
+          // Untuk menentukan nama document di firestore
           const doc = `${tanggalHadir} - ${Data.nama} - ${Data.id}`;
+          // Untuk menentukan data keterangan
           let keterangan = '';
-          if (hariIni.getHours() < 7) {
+          if (hariIni.getHours() <= 7) {
             keterangan = 'Tepat waktu';
           }
           if (hariIni.getHours() > 7) {
             keterangan = 'Telat';
           }
+
+          // Untuk menentukan data yang akan di Upload
           const data = {
             Periode: `${bulanSekarang} ${tahunSekarang}`,
             Tanggal: `${tanggalSekarang} `,
@@ -108,61 +130,65 @@ const CheckInScreen = ({route, navigation}) => {
             Keterangan: keterangan,
             Nama: Data.nama,
             Location: Koordinat,
-            UrlGambar : downloadUrl,
+            UrlGambar: downloadUrl,
             PathGambar: pathGambar,
           };
-          setProgress('Set data ok');
+
+          // Menjalankan fungsi upload ke firestore dan melempar data yang telah kita proses
           uploadData(doc, data, jamHadir);
         });
       },
     );
   };
 
+  // Fungsi untuk upload ke firestore dengan data yang berasal dari submit
   const uploadData = (doc, data) => {
-    setProgress('Mengupload...');
-    const ref = firestore().collection(`Absensi`);
+    setProgress('Mengupload Data CheckIn...');
+    const ref = firestore().collection('Absensi');
     ref
       .doc(doc)
       .set(data)
       .then(() => {
         setProgress('Mengarahkan ke halaman hasil');
         navigation.navigate('Check In Result', {DataCheckIn: data});
-        setModal(false)
+        setModal(false);
       })
       .catch((error) => {
+        // eslint-disable-next-line no-alert
         alert(error);
       });
   };
 
   return (
-    <Container>
-      <Content>
-        <RNCamera
-          ref={(ref) => setcamera(ref)}
-          style={{height: 500, width: 500}}
-          type={RNCamera.Constants.Type.front}
-          flashMode={RNCamera.Constants.FlashMode.on}
-        />
-      </Content>
-      <Content>
-        <Button
-          active={modal}
-          info
-          style={{marginVertical: 5, alignSelf: 'center'}}
-          onPress={submit}>
-          <Text> Check In </Text>
-        </Button>
-      </Content>
+    <View style={{flexDirection: 'column', justifyContent: 'space-between'}}>
+      {/* View Camera */}
+      <RNCamera
+        ref={(ref) => setcamera(ref)}
+        style={{height: 500, width: 500}}
+        // Menentukan Kamera depan atau belakang( ubah front menjadi back untuk menggunakan camera belakang)
+        type={RNCamera.Constants.Type.front}
+        flashMode={RNCamera.Constants.FlashMode.on}
+        ratio={'4:4'}
+      />
+
+      {/* Tombol untuk menjalankan submit */}
+      <Button
+        info
+        style={{marginVertical: 5, alignSelf: 'center'}}
+        onPress={submit}>
+        <Text> Check In </Text>
+      </Button>
+
+      {/* Modal Proses */}
       <Modal
         style={{width: 300, height: 100}}
         visible={modal}
-        backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.5)'}}
-        onBackdropPress={() => setModal(false)}>
+        backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
         <Card disabled={true}>
           <Text>{Progress}</Text>
         </Card>
       </Modal>
-    </Container>
+    </View>
   );
 };
 

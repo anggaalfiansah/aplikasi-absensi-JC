@@ -1,4 +1,5 @@
 /* eslint-disable prettier/prettier */
+/* eslint-disable no-alert */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useState} from 'react';
 import {
@@ -22,7 +23,9 @@ import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
 
 const IzinScreen = ({route, navigation}) => {
+  // Data dari lemparan dari HomeScreen untuk validasi upload data
   const Data = route.params.Data;
+
   const [Kategori, setKategori] = useState();
   const [Tanggal, setTanggal] = useState({
     startDate: new Date(),
@@ -35,16 +38,25 @@ const IzinScreen = ({route, navigation}) => {
   const [lampiran, setlampiran] = useState(
     'https://img.icons8.com/ios-glyphs/100/000000/camera.png',
   );
+  const [lampiranPath, setlampiranPath] = useState();
+
   const [modal2, setModal2] = useState(false);
   const [lampiran2, setlampiran2] = useState(
     'https://img.icons8.com/ios-glyphs/100/000000/camera.png',
   );
+  const [lampiranPath2, setlampiranPath2] = useState();
+
   const [modal3, setModal3] = useState(false);
   const [lampiran3, setlampiran3] = useState(
     'https://img.icons8.com/ios-glyphs/100/000000/camera.png',
   );
+  const [lampiranPath3, setlampiranPath3] = useState();
 
-  const captureImage = async (setFile, setVisibility, key) => {
+  const [Progress, setProgress] = useState('Mengupload gambar');
+  const [modalProgres, setModalProgres] = useState(false);
+
+  // Fungsi untuk menjalankan ImagePicker Untuk mengambil gambar melalui Kamera
+  const captureImage = async (setFile, setPath, setVisibility, key) => {
     let options = {
       maxWidth: 1280,
       maxHeight: 1024,
@@ -57,23 +69,26 @@ const IzinScreen = ({route, navigation}) => {
       if (response.didCancel) {
         alert('User cancelled camera picker');
         return;
-      } else if (response.errorCode == 'camera_unavailable') {
+      } else if (response.errorCode === 'camera_unavailable') {
         alert('Camera not available on device');
         return;
-      } else if (response.errorCode == 'permission') {
+      } else if (response.errorCode === 'permission') {
         alert('Permission not satisfied');
         return;
-      } else if (response.errorCode == 'others') {
+      } else if (response.errorCode === 'others') {
         alert(response.errorMessage);
         return;
       }
 
-      uploadFile(response.uri, setFile, key);
+      // Menjalankan fungsi upload gambar
+      uploadFile(response.uri, setFile, setPath, key);
+      // mematikan modal pilihan
       setVisibility(false);
     });
   };
 
-  const chooseFile = async (setFile, setVisibility, key) => {
+  // // Fungsi untuk menjalankan ImagePicker Untuk mengambil gambar melalui file
+  const chooseFile = async (setFile, setPath, setVisibility, key) => {
     let options = {
       maxWidth: 1280,
       maxHeight: 1024,
@@ -83,28 +98,35 @@ const IzinScreen = ({route, navigation}) => {
       if (response.didCancel) {
         alert('User cancelled camera picker');
         return;
-      } else if (response.errorCode == 'camera_unavailable') {
+      } else if (response.errorCode === 'camera_unavailable') {
         alert('Camera not available on device');
         return;
-      } else if (response.errorCode == 'permission') {
+      } else if (response.errorCode === 'permission') {
         alert('Permission not satisfied');
         return;
-      } else if (response.errorCode == 'others') {
+      } else if (response.errorCode === 'others') {
         alert(response.errorMessage);
         return;
       }
-      uploadFile(response.uri, setFile, key);
+      // Menjalankan fungsi upload gambar
+      uploadFile(response.uri, setFile, setPath, key);
+      // mematikan modal pilihan
       setVisibility(false);
     });
   };
 
-  const uploadFile = (foto, setFile, key) => {
-    const hariIni = new Date();
-    const tanggalSekarang = hariIni.getDate();
+  // Fungsi Untuk Upload gambar ke fireStorage yang telah diambil dari kamera/file
+  const uploadFile = (foto, setFile, setPath, key) => {
+    // Untuk menampilkan modal proses
+    setModalProgres(true);
+
+    // Menentukan tanggal, bulan, tahun untuk validasi upload ke firestorage
+    const tanggalAwal = Tanggal.startDate.getDate();
+    const tanggalAkhir = Tanggal.endDate.getDate();
     const bulan = [
       'Januari',
       'Februari',
-      'Marcet',
+      'Maret',
       'April',
       'Mei',
       'Juni',
@@ -115,15 +137,19 @@ const IzinScreen = ({route, navigation}) => {
       'November',
       'Desember',
     ];
-    const bulanSekarang = bulan[hariIni.getMonth()];
-    const tahunSekarang = hariIni.getFullYear();
-    const tanggalIzin = `${tanggalSekarang} ${bulanSekarang} ${tahunSekarang}`;
+    const bulanAwal = bulan[Tanggal.startDate.getMonth()];
+    const bulanAkhir = bulan[Tanggal.endDate.getMonth()];
+    const tahunAwal = Tanggal.startDate.getFullYear();
+    const tahunAkhir = Tanggal.endDate.getFullYear();
+    const tanggalIzinAwal = `${tanggalAwal} ${bulanAwal} ${tahunAwal}`;
+    const tanggalIzinAkhir = `${tanggalAkhir} ${bulanAkhir} ${tahunAkhir}`;
 
-    console.log('Mengupload File');
+    // Untuk Mengupload gambar ke firebase
     const storageRef = storage().ref(
-      `Izin/Lampiran${key} ${tanggalIzin}-${Data.nama}`,
+      `Izin/Lampiran${key}-${Data.nama} ${tanggalIzinAwal}-${tanggalIzinAkhir}`,
     );
     storageRef.putFile(`${foto}`).on(
+      // Untuk menampilkan progress Upload
       storage.TaskEvent.STATE_CHANGED,
       (snapshot) => {
         console.log('snapshot: ' + snapshot.state);
@@ -141,12 +167,21 @@ const IzinScreen = ({route, navigation}) => {
       },
       () => {
         // Untuk mendapatkan url dari file yang kita upload
-        storageRef.getDownloadURL().then((downloadUrl) => setFile(downloadUrl));
+        storageRef.getDownloadURL().then((downloadUrl) => {
+          setFile(downloadUrl);
+          setPath(
+            `Izin/Lampiran${key}-${Data.nama} ${tanggalIzinAwal}-${tanggalIzinAkhir}`,
+          );
+
+          setModalProgres(false);
+        });
       },
     );
   };
 
+  // Fungsi untuk mengirim data ke firestore
   const submit = () => {
+    // Untuk mengambil list data dari jangka waktu izin dan memasukkannya ke array
     for (
       var arr = [], dt = new Date(Tanggal.startDate);
       dt <= Tanggal.endDate;
@@ -156,28 +191,37 @@ const IzinScreen = ({route, navigation}) => {
     }
     const listTanggal = arr;
 
-    // Mengambil List Lampiran
+    // Mengambil List Lampiran dan menggabungkannya menjadi satu array
     const file = [];
+    // Mengambil List lampiranPath dan menggabungkannya menjadi satu array
+    const filePath = [];
+    // Pengkondisian untuk membuat array lampiran dan lampiranPath, jika lampiran masih default maka tidak akan membuat array lampiran & lampiranPath
     if (
       lampiran !== 'https://img.icons8.com/ios-glyphs/100/000000/camera.png'
     ) {
       file.push(lampiran);
+      filePath.push(lampiranPath);
     }
     if (
       lampiran2 !== 'https://img.icons8.com/ios-glyphs/100/000000/camera.png'
     ) {
       file.push(lampiran2);
+      filePath.push(lampiranPath2);
     }
     if (
       lampiran3 !== 'https://img.icons8.com/ios-glyphs/100/000000/camera.png'
     ) {
       file.push(lampiran3);
+      filePath.push(lampiranPath3);
     }
 
+    // Membuat batch dengan isi berdasarkan jangka waktu izin untuk di upload sekaligus
     const db = firestore();
     const batch = db.batch();
 
+    // membongkar array jangka waktu untuk dimasukkan kedalam batch supaya bisa di upload sekaligus
     listTanggal.forEach((tanggal) => {
+      // menentukan tanggal, bulan, tahun untuk data
       const bulan = [
         'Januari',
         'Februari',
@@ -195,7 +239,11 @@ const IzinScreen = ({route, navigation}) => {
       const tanggalLengkap = `${tanggal.getDate()} ${
         bulan[tanggal.getMonth()]
       } ${tanggal.getFullYear()}`;
+
+      // Untuk menentukan nama document di firestore
       const doc = `${tanggalLengkap} - ${Data.nama} - ${Data.id}`;
+
+      // Untuk menentukan data yang akan di Upload
       const data = {
         Periode: `${bulan[tanggal.getMonth()]} ${tanggal.getFullYear()}`,
         Tanggal: `${tanggal.getDate()} `,
@@ -207,11 +255,47 @@ const IzinScreen = ({route, navigation}) => {
         Perihal: Perihal,
         Keterangan: Keterangan,
         UrlLampiran: file,
+        pathLampiran: filePath,
       };
+
+      // Memasukan data dan nama document ke dalam batch
       batch.set(db.collection('Absensi').doc(doc), data);
     });
-    batch.commit().then(() => console.log('Upload Success'));
 
+    // Untuk mengupload batch ke firestore
+    batch.commit().then(() => {
+      console.log('Upload Success');
+      navigation.goBack();
+    });
+  };
+
+  const cancel = () => {
+    // Menghapus file lampiran di fireStorage
+    if (
+      lampiran !== 'https://img.icons8.com/ios-glyphs/100/000000/camera.png'
+    ) {
+      const storageRef = storage().ref(lampiranPath);
+      storageRef.delete().then(() => {
+        console.log('Data Berhasil Dihapus');
+      });
+    }
+    if (
+      lampiran2 !== 'https://img.icons8.com/ios-glyphs/100/000000/camera.png'
+    ) {
+      const storageRef = storage().ref(lampiranPath2);
+      storageRef.delete().then(() => {
+        console.log('Data Berhasil Dihapus');
+      });
+    }
+    if (
+      lampiran3 !== 'https://img.icons8.com/ios-glyphs/100/000000/camera.png'
+    ) {
+      const storageRef = storage().ref(lampiranPath3);
+      storageRef.delete().then(() => {
+        console.log('Data Berhasil Dihapus');
+      });
+    }
+    // Untuk Mengarahkan kita kehalaman home
     navigation.goBack();
   };
 
@@ -315,6 +399,9 @@ const IzinScreen = ({route, navigation}) => {
           <Button block info style={{marginVertical: 5}} onPress={submit}>
             <Text> Kirim </Text>
           </Button>
+          <Button block light style={{marginVertical: 5}} onPress={cancel}>
+            <Text> Cancel </Text>
+          </Button>
 
           <Modal
             style={{width: 300}}
@@ -326,13 +413,17 @@ const IzinScreen = ({route, navigation}) => {
               <Button
                 block
                 style={{marginVertical: 5}}
-                onPress={() => captureImage(setlampiran, setModal, 1)}>
+                onPress={() =>
+                  captureImage(setlampiran, setlampiranPath, setModal, 1)
+                }>
                 <Text> Camera </Text>
               </Button>
               <Button
                 block
                 style={{marginVertical: 5}}
-                onPress={() => chooseFile(setlampiran, setModal, 1)}>
+                onPress={() =>
+                  chooseFile(setlampiran, setlampiranPath, setModal, 1)
+                }>
                 <Text> File </Text>
               </Button>
               <Button block light onPress={() => setModal(false)}>
@@ -350,13 +441,17 @@ const IzinScreen = ({route, navigation}) => {
               <Button
                 block
                 style={{marginVertical: 5}}
-                onPress={() => captureImage(setlampiran2, setModal2, 2)}>
+                onPress={() =>
+                  captureImage(setlampiran2, setlampiranPath2, setModal2, 2)
+                }>
                 <Text> Camera </Text>
               </Button>
               <Button
                 block
                 style={{marginVertical: 5}}
-                onPress={() => chooseFile(setlampiran2, setModal2, 2)}>
+                onPress={() =>
+                  chooseFile(setlampiran2, setlampiranPath2, setModal2, 2)
+                }>
                 <Text> File </Text>
               </Button>
               <Button block light onPress={() => setModal2(false)}>
@@ -374,13 +469,17 @@ const IzinScreen = ({route, navigation}) => {
               <Button
                 block
                 style={{marginVertical: 5}}
-                onPress={() => captureImage(setlampiran3, setModal3, 3)}>
+                onPress={() =>
+                  captureImage(setlampiran3, setlampiranPath3, setModal3, 3)
+                }>
                 <Text> Camera </Text>
               </Button>
               <Button
                 block
                 style={{marginVertical: 5}}
-                onPress={() => chooseFile(setlampiran3, setModal3, 3)}>
+                onPress={() =>
+                  chooseFile(setlampiran3, setlampiranPath3, setModal3, 3)
+                }>
                 <Text> File </Text>
               </Button>
               <Button block light onPress={() => setModal3(false)}>
@@ -390,6 +489,16 @@ const IzinScreen = ({route, navigation}) => {
           </Modal>
         </Form>
       </Content>
+
+      {/* Modal Proses */}
+      <Modal
+        style={{width: 300, height: 100}}
+        visible={modalProgres}
+        backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
+        <Card disabled={true}>
+          <Text>{Progress}</Text>
+        </Card>
+      </Modal>
     </Container>
   );
 };

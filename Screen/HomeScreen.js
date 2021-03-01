@@ -1,11 +1,12 @@
 /* eslint-disable prettier/prettier */
+// /* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable no-alert */
 
 import React, {useEffect, useState} from 'react';
 import {
   TouchableOpacity,
   StyleSheet,
-  //   FlatList,
   Image,
   Text,
   View,
@@ -13,15 +14,22 @@ import {
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import {Card, Modal} from '@ui-kitten/components';
 
 const HomeScreen = ({extraData, navigation}) => {
   const [Data, setData] = useState();
   const [DataHariIni, setDataHariIni] = useState();
   const [controllerCheckIn, setcontrollerCheckIn] = useState(true);
   const [controllerCheckOut, setcontrollerCheckOut] = useState(true);
+  const [modal, setModal] = useState(false);
+  const [Progress, setProgress] = useState(
+    'Proses Check In Akan Segera berjalan',
+  );
 
+  // ID  untuk mengambil data user di firestore
   const uid = extraData.uid;
 
+  // Untuk mengambil tanggal, bulan, tahun untuk digunakan saat validasi pengambilan data
   const hariIni = new Date();
   let hariKemarin = new Date();
   hariKemarin.setDate(hariKemarin.getDate() - 1);
@@ -51,6 +59,7 @@ const HomeScreen = ({extraData, navigation}) => {
     home();
   });
 
+  // Menambil data profil dari firestore untuk digunakan oleh fungsi lain sebagai validasi saat mengambil data absensi
   const home = () => {
     const ref = firestore().collection('Pegawai');
     ref
@@ -67,18 +76,22 @@ const HomeScreen = ({extraData, navigation}) => {
       });
   };
 
+  // Mengambil data hari ini dan memvalidasinya
+  // Jika data undifined, maka CheckIn button akan aktif, dan CheckOut button terdisable
+  // Jika data ada tapi CheckOut masih kosong, maka CheckIn button akan terdisable, dan CheckOut button aktif
+  // Jika data sudah lengkap, maka CheckIn dan CheckOut button terdisable
   const hariSekarang = (user) => {
-    const ref = firestore().collection(`Absensi`);
+    const ref = firestore().collection('Absensi');
     ref
       .doc(`${tanggalHariIni} - ${user.nama} - ${user.id}`)
       .get()
       .then((firestoreDocuments) => {
         const datahariini = firestoreDocuments.data();
         setDataHariIni(datahariini);
-        if (datahariini == undefined) {
+        if (datahariini === undefined) {
           setcontrollerCheckIn(false);
           setcontrollerCheckOut(true);
-        } else if (datahariini.CheckOut == '-') {
+        } else if (datahariini.CheckOut === '-') {
           setcontrollerCheckIn(true);
           setcontrollerCheckOut(false);
         } else {
@@ -91,8 +104,11 @@ const HomeScreen = ({extraData, navigation}) => {
       });
   };
 
+  // Mengambil data hari sebelumnya dan memvalidasinya.
+  // Jika data undifined maka otomatis akan membuat data baru dengan keterangan "Tidak Masuk"
+  // Jika data ada, tapi belum di CheckOut. Maka akan membuat Checkout otomatis pada "19:00" dan keterangan "Telat CheckOut"
   const hariSebelumnya = (user) => {
-    const ref = firestore().collection(`Absensi`);
+    const ref = firestore().collection('Absensi');
     ref
       .doc(`${tanggalKemarin} - ${user.nama} - ${user.id}`)
       .get()
@@ -122,7 +138,6 @@ const HomeScreen = ({extraData, navigation}) => {
             Lembur: '-',
           };
           console.log('Upload Data...');
-          const ref = firestore().collection(`Absensi`);
           ref.doc(`${tanggalKemarin} - ${user.nama} - ${user.id}`).update(data);
         }
       })
@@ -131,8 +146,10 @@ const HomeScreen = ({extraData, navigation}) => {
       });
   };
 
+  // Fungsi CheckOut
   const checkOut = () => {
-    console.log('memulai Check Out...');
+    setModal(true);
+    setProgress('memulai Check Out...');
     const HariIni = new Date();
     const jamPulang = HariIni.toString().substr(16, 5);
     const hadir = DataHariIni.CheckIn.split(':');
@@ -142,8 +159,10 @@ const HomeScreen = ({extraData, navigation}) => {
       new Date(0, 0, 0, hadir[0], hadir[1], 0).getTime();
     const jamLembur = Math.floor(diff / 1000 / 60 / 60);
     const menitLembur = Math.floor(diff / 1000 / 60);
-    console.log('Set Waktu...');
-    if (jamLembur < 0) jamLembur = jamLembur + 24;
+    setProgress('Set Waktu...');
+    if (jamLembur < 0) {
+      jamLembur + 24;
+    }
 
     let lembur = '';
     let keterangan = '';
@@ -164,36 +183,39 @@ const HomeScreen = ({extraData, navigation}) => {
       keterangan = `${DataHariIni.Keterangan}, Lembur`;
     }
 
-    console.log('Set Data...');
+    setProgress('Set Data CheckOut...');
     const data = {
       Keterangan: keterangan,
       CheckOut: jamPulang,
       Lembur: lembur,
     };
-    console.log('Upload Data...');
-    const ref = firestore().collection(`Absensi`);
+    setProgress('Upload Data CheckOut...');
+    const ref = firestore().collection('Absensi');
     ref
       .doc(`${tanggalHariIni} - ${Data.nama} - ${Data.id}`)
       .update(data)
       .then(() => {
-        alert(`Check Out pada ${jamPulang}`);
+        setProgress('Proses Check Out ');
         setcontrollerCheckIn(true);
         setcontrollerCheckOut(true);
-        console.log('Check Out Selesai');
+        setModal(false);
+        alert(`Check Out Selesai Pada ${jamPulang}`);
       });
   };
 
+  // Fungsi Logout
   const logout = () => {
     auth()
       .signOut()
       .then(() => {
-        console.log('User signed out!');
+        alert('Berhasil Log Out');
       });
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.cardContainer}>
+        {/* Check In */}
         <TouchableOpacity
           disabled={controllerCheckIn}
           style={styles.card}
@@ -212,6 +234,7 @@ const HomeScreen = ({extraData, navigation}) => {
             <Text style={styles.title}>Check In</Text>
           </View>
         </TouchableOpacity>
+        {/* Check Out */}
         <TouchableOpacity
           disabled={controllerCheckOut}
           style={styles.card}
@@ -228,7 +251,9 @@ const HomeScreen = ({extraData, navigation}) => {
           </View>
         </TouchableOpacity>
       </View>
+
       <View style={styles.cardContainer}>
+        {/* Izin */}
         <TouchableOpacity
           style={styles.card}
           onPress={() => {
@@ -243,6 +268,7 @@ const HomeScreen = ({extraData, navigation}) => {
             <Text style={styles.title}>Izin</Text>
           </View>
         </TouchableOpacity>
+        {/* History */}
         <TouchableOpacity
           style={styles.card}
           onPress={() => {
@@ -260,7 +286,9 @@ const HomeScreen = ({extraData, navigation}) => {
           </View>
         </TouchableOpacity>
       </View>
+
       <View style={styles.cardContainer}>
+        {/* Logout */}
         <TouchableOpacity style={styles.card} onPress={logout}>
           <View style={styles.cardFooter} />
           <Image
@@ -274,6 +302,16 @@ const HomeScreen = ({extraData, navigation}) => {
           </View>
         </TouchableOpacity>
       </View>
+
+      {/* Modal Progress CheckOut */}
+      <Modal
+        style={{width: 300, height: 100}}
+        visible={modal}
+        backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
+        <Card disabled={true}>
+          <Text>{Progress}</Text>
+        </Card>
+      </Modal>
     </SafeAreaView>
   );
 };

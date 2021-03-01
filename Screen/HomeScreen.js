@@ -135,7 +135,7 @@ const HomeScreen = ({extraData, navigation}) => {
             UrlGambar: '-',
             PathGambar: '-',
           };
-          ref.doc(`${tanggalKemarin} - ${user.nama} - ${user.id}`).set(data);
+          ref.doc(`${tanggalHariKemarin} - ${user.nama} - ${user.id}`).set(data);
         }
         if (dataKemarin.CheckIn !== '-' && dataKemarin.CheckOut === '-') {
           const data = {

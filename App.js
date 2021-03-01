@@ -12,6 +12,9 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
 import {PermissionsAndroid, Platform} from 'react-native';
 import auth from '@react-native-firebase/auth';
+import {LogBox} from 'react-native';
+
+LogBox.ignoreLogs(['Warning: ...']);
 
 const Stack = createStackNavigator();
 

@@ -146,7 +146,7 @@ const IzinScreen = ({route, navigation}) => {
 
     // Untuk Mengupload gambar ke firebase
     const storageRef = storage().ref(
-      `Izin/Lampiran${key}-${Data.nama} ${tanggalIzinAwal}-${tanggalIzinAkhir}`,
+      `Izin/Lampiran${key}-${Data.nama}-${Data.id} ${tanggalIzinAwal}-${tanggalIzinAkhir}`,
     );
     storageRef.putFile(`${foto}`).on(
       // Untuk menampilkan progress Upload
@@ -170,7 +170,7 @@ const IzinScreen = ({route, navigation}) => {
         storageRef.getDownloadURL().then((downloadUrl) => {
           setFile(downloadUrl);
           setPath(
-            `Izin/Lampiran${key}-${Data.nama} ${tanggalIzinAwal}-${tanggalIzinAkhir}`,
+            `Izin/Lampiran${key}-${Data.nama}-${Data.id} ${tanggalIzinAwal}-${tanggalIzinAkhir}`,
           );
 
           setModalProgres(false);
@@ -181,6 +181,8 @@ const IzinScreen = ({route, navigation}) => {
 
   // Fungsi untuk mengirim data ke firestore
   const submit = () => {
+    setModalProgres(true);
+    setProgress('Mengupload data');
     // Untuk mengambil list data dari jangka waktu izin dan memasukkannya ke array
     for (
       var arr = [], dt = new Date(Tanggal.startDate);
@@ -190,6 +192,7 @@ const IzinScreen = ({route, navigation}) => {
       arr.push(new Date(dt));
     }
     const listTanggal = arr;
+    console.log('set tanggal');
 
     // Mengambil List Lampiran dan menggabungkannya menjadi satu array
     const file = [];
@@ -215,12 +218,18 @@ const IzinScreen = ({route, navigation}) => {
       filePath.push(lampiranPath3);
     }
 
+    console.log('file');
+    console.log(file);
+    console.log(filePath);
+
     // Membuat batch dengan isi berdasarkan jangka waktu izin untuk di upload sekaligus
     const db = firestore();
     const batch = db.batch();
+    console.log('set batch');
 
     // membongkar array jangka waktu untuk dimasukkan kedalam batch supaya bisa di upload sekaligus
     listTanggal.forEach((tanggal) => {
+      console.log('set batch item');
       // menentukan tanggal, bulan, tahun untuk data
       const bulan = [
         'Januari',
@@ -262,11 +271,19 @@ const IzinScreen = ({route, navigation}) => {
       batch.set(db.collection('Absensi').doc(doc), data);
     });
 
+    console.log('commit');
     // Untuk mengupload batch ke firestore
-    batch.commit().then(() => {
-      console.log('Upload Success');
-      navigation.goBack();
-    });
+    batch
+      .commit()
+      .then(() => {
+        console.log('Upload Data Berhasil');
+      })
+      .catch((err) => console.log(`There was an error: ${err}`));
+
+    setProgress('Upload Data Berhasil');
+
+    // Mengarahkan ke halaman utama
+    navigation.goBack();
   };
 
   const cancel = () => {
